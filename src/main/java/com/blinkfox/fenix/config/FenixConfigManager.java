@@ -13,14 +13,21 @@ import com.blinkfox.fenix.helper.StringHelper;
 import com.blinkfox.fenix.helper.XmlNodeHelper;
 import java.net.URL;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Namespace;
 import org.dom4j.Node;
+import org.dom4j.XPath;
 
 /**
  * Fenix 的配置信息管理器单例类，用于加载 Fenix 所需的各种配置信息到内存中.
@@ -33,6 +40,8 @@ import org.dom4j.Node;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FenixConfigManager {
+
+    private final Map<String, XPath> xpathMapCache = new HashMap<>();
 
     /**
      * Fenix 的 banner 文本.
@@ -137,7 +146,10 @@ public final class FenixConfigManager {
         Collection<XmlResource> xmlResources = xmlResourceMap.values();
         for (XmlResource xmlResource : xmlResources) {
             String namespace = xmlResource.getNamespace();
-            for (Node fenixNode : xmlResource.getDocument().selectNodes(XpathConst.FENIX_TAG)) {
+            Document document = xmlResource.getDocument();
+            Namespace xmlNamespace = document.getRootElement().getNamespace();
+            List<Node> selectedNodes = createOrGetXPath(xmlNamespace.getURI()).selectNodes(document);
+            for (Node fenixNode : selectedNodes) {
                 String fenixId = XmlNodeHelper.getNodeText(fenixNode.selectSingleNode(XpathConst.ATTR_ID));
                 if (StringHelper.isBlank(fenixId)) {
                     throw new NodeNotFoundException("【Fenix 异常提示】命名空间为【" + namespace + "】的 Fenix XML 文件中有"
@@ -160,6 +172,22 @@ public final class FenixConfigManager {
                 }
             }
         }
+    }
+
+    private XPath createOrGetXPath(String xmlNamespace) {
+        return Optional.ofNullable(xpathMapCache.get(xmlNamespace)).orElseGet(() -> {
+            XPath xpath;
+            if (!"".equals(xmlNamespace)) {
+                xpath = DocumentHelper.createXPath(XpathConst.FENIX_TAG_WITH_NAMESPACE);
+                Map<String, String> namespaceUriMap = new HashMap<>(1);
+                namespaceUriMap.put("namespace", xmlNamespace);
+                xpath.setNamespaceURIs(namespaceUriMap);
+            } else {
+                xpath = DocumentHelper.createXPath(XpathConst.FENIX_TAG);
+            }
+            xpathMapCache.put(xmlNamespace, xpath);
+            return xpath;
+        });
     }
 
     /**

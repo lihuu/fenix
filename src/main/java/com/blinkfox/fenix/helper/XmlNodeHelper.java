@@ -10,12 +10,17 @@ import com.blinkfox.fenix.exception.NodeNotFoundException;
 import com.blinkfox.fenix.exception.XmlParseException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Namespace;
 import org.dom4j.Node;
+import org.dom4j.XPath;
 import org.dom4j.io.SAXReader;
 import org.springframework.core.io.UrlResource;
 import org.springframework.util.CollectionUtils;
@@ -41,7 +46,7 @@ public final class XmlNodeHelper {
      * 将实时根据已知的 namespace 去读取之前缓存过的 XML 文件中的内容.</p>
      *
      * @param namespace XML 文件对应命名空间
-     * @param fenixId fenixId
+     * @param fenixId   fenixId
      * @return dom4j的Node节点
      */
     public static Node getNodeBySpaceAndId(String namespace, String fenixId) {
@@ -62,7 +67,18 @@ public final class XmlNodeHelper {
                 }
 
                 try {
-                    node = doc.selectSingleNode("/fenixs/fenix[@id='" + fenixId + "']");
+                    Namespace xmlNamespace = doc.getRootElement().getNamespace();
+                    XPath xpath;
+                    if (!"".equals(xmlNamespace.getURI())) {
+                        Map<String, String> namespaceUriMap = new HashMap<>(1);
+                        namespaceUriMap.put("namespace", xmlNamespace.getURI());
+                        xpath = DocumentHelper.createXPath(XpathConst.FENIX_TAG_WITH_NAMESPACE
+                                + "[@id='" + fenixId + "']");
+                        xpath.setNamespaceURIs(namespaceUriMap);
+                    } else {
+                        xpath = DocumentHelper.createXPath("/fenixs/fenix[@id='" + fenixId + "']");
+                    }
+                    node = xpath.selectSingleNode(doc);
                     if (Objects.nonNull(node)) {
                         break;
                     }
@@ -90,7 +106,7 @@ public final class XmlNodeHelper {
     /**
      * 获取节点文本的字符串值.
      *
-     * @param node dom4j 节点
+     * @param node     dom4j 节点
      * @param attrName 节点属性
      * @return 返回节点文本值
      */
@@ -103,7 +119,7 @@ public final class XmlNodeHelper {
      *
      * <p>注：该方法需要判断必填的参数是否为空，为空的话，需要抛出 {@link FieldEmptyException} 异常.</p>
      *
-     * @param node dom4j 节点
+     * @param node     dom4j 节点
      * @param nodeName 节点名称
      * @return 返回节点文本值
      */
@@ -129,7 +145,7 @@ public final class XmlNodeHelper {
         if (StringHelper.isBlank(startText) && StringHelper.isBlank(endText)) {
             throw new FieldEmptyException("【Fenix 异常】【" + node.getName() + "】标签中填写的【start】和【end】字段值都是空的！");
         }
-        return new String[] {startText, endText};
+        return new String[]{startText, endText};
     }
 
 }

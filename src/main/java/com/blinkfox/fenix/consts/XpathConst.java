@@ -23,6 +23,11 @@ public final class XpathConst {
     public static final String FENIX_TAG = "fenixs/fenix";
 
     /**
+     * 查找带有 xml xmlns 标签的 XPATH 常量.
+     */
+    public static final String FENIX_TAG_WITH_NAMESPACE = "//namespace:fenixs/namespace:fenix";
+
+    /**
      * 查找 XML 标签的命名空间常量.
      */
     public static final String ATTR_NAMESPACE = "attribute::namespace";

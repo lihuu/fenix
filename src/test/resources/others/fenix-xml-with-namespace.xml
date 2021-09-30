@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 测试包含xmlns的xml文件能否正常解析. -->
+<fenixs namespace="myFenixXml" xmlns="http://www.w3school.com.cn"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.w3school.com.cn https://gitee.com/blinkfox/fenix/blob/develop/fenix.xsd"
+>
+
+    <!-- 查询所有用户信息. -->
+    <fenix id="queryAllMyUsers">
+        SELECT u FROM User AS u
+    </fenix>
+
+</fenixs>
